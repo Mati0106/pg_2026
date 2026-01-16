@@ -13,5 +13,3 @@ X_train = pca.fit_transform(df)
 
 
 explained_variance = pca.explained_variance_ratio_
-
-#omowic variance
