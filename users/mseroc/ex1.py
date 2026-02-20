@@ -12,7 +12,7 @@ password = credentials.get("password", "")
 def connection_to_db(user, password):
     print(f"User is: {user}, Password is: {password}")
     return ""
-
+print('ok')
 
 con = connection_to_db(user, password)
 data = load_data(input_list=elements, index_output=0, cond='iris')
