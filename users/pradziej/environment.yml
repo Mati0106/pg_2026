@@ -1,0 +1,9 @@
+name: pr_pg26
+channels:
+  - conda-forge
+dependencies:
+  - python=3.14
+  - pandas
+  - scikit-learn
+  - numpy
+  - matplotlib
