@@ -1,0 +1,1 @@
+settings = {"elements": ['titanic-full', 'boston', 'Iris'],"cond": "titanic-full", "index_output": 0, "extension": ".csv"}
