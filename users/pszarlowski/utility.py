@@ -17,7 +17,7 @@ def loadData(
     try:
         file_name = output_list[index_output]+extension
     except IndexError:
-        raise("Wrong index 12")
+        raise("Wrong index")
 
 
     cwd = Path.cwd()
