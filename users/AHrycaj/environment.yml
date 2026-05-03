@@ -1,4 +1,4 @@
-name: pg26
+name: ah_pg26
 channels:
   - conda-forge
 dependencies:
