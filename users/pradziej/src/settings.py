@@ -1,3 +1,2 @@
-settings = {
-    "elements": ['iris', 'boston', 'titanic']
-}
+_dataset_path = "csafrit2/maternal-health-risk-data"
+settings = { "dataset": _dataset_path }

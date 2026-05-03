@@ -1,1 +1,7 @@
 .env
+../../datasets
+../../.DS_Store
+src/__pycache__
+../../exercises
+../../lecture*
+exercises/**/*

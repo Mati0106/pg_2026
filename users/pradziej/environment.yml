@@ -3,7 +3,17 @@ channels:
   - conda-forge
 dependencies:
   - python=3.14
+  - kagglehub
   - pandas
   - scikit-learn
   - numpy
   - matplotlib
+  - optuna
+  - optuna-integration
+  - optuna-dashboard
+  - chainer
+  - nbformat>=4.2.0
+  - xgboost
+  - shap
+  - ydata-profiling
+  
