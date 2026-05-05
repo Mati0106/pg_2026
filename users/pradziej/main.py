@@ -1,166 +1,148 @@
 import logging as log
-from src.DataLoader import DataLoader
-from src.settings import settings
-from sklearn.model_selection import train_test_split
 import xgboost as xgb
+import pandas as pd
 import matplotlib.pyplot as plt
 import shap
-import pandas as pd
 
+from src.DataLoader import DataLoader
+from src.DataConverter import DataConverter
+from src.settings import settings
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import confusion_matrix, accuracy_score
+from sklearn.metrics import classification_report
 
-
-log.basicConfig(level=log.DEBUG)
+log.basicConfig(level=log.INFO)
 
 # 1. Read the data
-dataset_name = settings['dataset']
+
 data_loader = DataLoader()
-df = data_loader.load_data(dataset_name, force_download=False)
-log.info(df.describe())
-log.info(print(df.head()))
+df: pd.DataFrame = data_loader.load_data(settings['dataset'], force_download=False)
 
 # 2. Data analysis + preprocessing
-#Data understanding
+data_converter = DataConverter()
+
+# Data understanding
 data_understanding_explanation = """
 Data has been collected from different hospitals, community clinics, maternal health cares through the IoT based risk monitoring system.
 
 Columns:
- - Age - int,
- - SystolicBP - Upper value of Blood Pressure in mmHg
- - DiastolicBP - Lower value of Blood Pressure in mmHg
- - BS - Blood glucose levels is in terms of a molar concentration, mmol/L
- - BodyTemp - in F,
- - HeartRate - A normal resting heart rate in beats per minute.
+ - Age - age of the person [int],
+ - SystolicBP - Upper value of Blood Pressure in mmHg [float]
+ - DiastolicBP - Lower value of Blood Pressure in mmHg [float]
+ - BS - Blood glucose levels is in terms of a molar concentration, mmol/L [float]
+ - BodyTemp - body temperature [F],
+ - HeartRate - A normal resting heart rate in beats per minute [int].
  - RiskLevel - Predicted Risk Intensity Level during pregnancy -> THIS WILL BE OUR TARGET
 
 
  MAIN QUESTION:
-  - Based on the simple mearusrements, that each future mum can make at home, provide a risk rank (high, medium, low)
+  - Based on the simple measurements, that each future mum can make at home, provide a risk rank (high, medium, low)
+  - Prepare a model, that can answer if the pregnancy is in danger
+  - Just answer what is the most important parameter (from the available set) to measure during pregnancy.
 """
-log.info(data_understanding_explanation)
 
-log.debug(f"Columns, {df.columns}")
-log.debug(f'RiskLevel:\n{df['RiskLevel'].unique()}')
+print(data_understanding_explanation)
+print(f'Columns, {df.columns}')
+print(f'RiskLevel:\n{df['RiskLevel'].unique()}')
 
+print('Head of the data', df.head())
+print('Tail of the data', df.tail())
+print('Types of the columns', df.dtypes)
+print('General info: ', df.info())
 
-df.drop_duplicates()
+print('Amount of rows(observations), columns(features) [raw data]', df.shape)
 
-# 3.1 BodyTemp is in Farenheit - convert it to Celsius
-def to_celcius(temp_f):
-    return round((temp_f - 32) / 1.8, 1)
+df.drop_duplicates(inplace=True)
+print('Amount of rows(observations), columns(features) [without duplicates data]', df.shape)
 
-df['BodyTempC'] = df['BodyTemp'].apply(to_celcius)
-log.debug(f'BodyTempC:\n\t{df['BodyTempC'].describe()}')
-df = df.drop(columns=['BodyTemp'])
-
+df.dropna(inplace=True)
+print('Amount of rows(observations), columns(features) [without null values]', df.shape)
 
 # Convert a subset of columns to categorical
-RiskLevel = {
-    'low risk': 1, 
-    'mid risk': 2, 
-    'high risk': 3
+RiskLevelConversionMap = {
+    'low risk': 0,
+    'mid risk': 1,
+    'high risk': 2
 }
-df['RiskLevel'] = df['RiskLevel'].map(RiskLevel).astype(float)
+data_converter.encode_categorial_with_map(df, 'RiskLevel', RiskLevelConversionMap)
 
+# BodyTemp is in Fahrenheit - convert it to Celsius
+data_converter.fahrenheit_to_celcius(df, 'BodyTemp')
 
 # 3. Feature engineering
-def get_age_group(age):
-    if age < 18:
-        return 'Under 18'
-    elif age >= 18 and age < 25:
-        return '18-24'
-    elif age >= 25 and age < 35:
-        return '25-34'
-    elif age >= 35 and age < 45:
-        return '35-44'
-    elif age >= 45 and age < 55:
-        return '45-54'
-    elif age >= 55 and age < 65:
-        return '55-64'
-    else:
-        return '65+'
-#df['AgeGroup'] = df['Age'].apply(get_age_group)
-#log.debug(f'AgeGroup:\n{df['AgeGroup'].describe()}')
-#df_filtered = df.drop(columns=['Age'])
-
-
-
 target_names = ['RiskLevel']
 feature_names = [c for c in df.columns if c not in target_names]
-log.info(f'Feature names: {feature_names}, Target names: {target_names}')
+print(f'Feature names: {feature_names}, Target names: {target_names}')
+[print(f'RiskLevel correlation with {x}', df[['RiskLevel',x]].corr()) for x in feature_names]
 
+"""
+print('RiskLevel correlation with Age', df[['RiskLevel','Age']].corr())
+print('RiskLevel correlation with SystolicBP', df[['RiskLevel','SystolicBP']].corr())
+print('RiskLevel correlation with DiastolicBP', df[['RiskLevel','DiastolicBP']].corr())
+print('RiskLevel correlation with BS', df[['RiskLevel','BS']].corr())
+print('RiskLevel correlation with BS', df[['RiskLevel','BodyTemp']].corr())
+print('RiskLevel correlation with HeartRate', df[['RiskLevel','HeartRate']].corr())
+"""
 
-X = df[feature_names]
-y = df[target_names]
+X, y = df[feature_names], df[target_names]
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=settings['test_size'], random_state=settings['random_state'])
 
+# Shape - shows amount of rows and columns (works like list length, but for matrix)
+print(f'Training Shape X:', X_train.shape, 'Testing Shape X:', X_test.shape)
+print(f'Training Shape y:', y_train.shape, 'Testing Shape y:', y_test.shape)
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-
-# Convert data into DMatrix format for XGBoost - seams it's not needed
-#dtrain = xgb.DMatrix(X_train, label=y_train, enable_cagegorical=True)
-#dtest = xgb.DMatrix(X_test, label=y_test, enable_cagegorical=True)
-
-
-#Shape
-print(f'Training Shape x:',X_train.shape)
-print(f'Testing Shape x:',X_test.shape)
-print('*****___________*****___________*****')
-print(f'Training Shape y:',X.shape)
-print(f'Testing Shape y:',y.shape)
-
-
-
-#StandardScaler
-
+# StandardScaler
 ss = StandardScaler()
 X_train = ss.fit_transform(X_train)
-X_test= ss.transform(X_test)
-
-
+X_test = ss.transform(X_test)
 
 # 4. Modeling
-xgboost_model = xgb.XGBClassifier(enable_cagegorical=True)
+xgboost_model = xgb.XGBClassifier(n_estimators=100, max_depth=2)
 xgboost_model.fit(X_train, y_train)
 
-
-
-
-
-
 # 5. Optimization
+#Placeholder for Optuna
 
 
 
+# 6. Results interpretation (shap values, feature importance, partial dependence plot itp.)
+y_pred = xgboost_model.predict(X_test)
+log.debug('y_pred:', y_pred)
+
+cm = confusion_matrix(y_test, y_pred)
+print(f'Confusion Matrix:',cm)
+
+print(f'Accuracy:',accuracy_score(y_test, y_pred)* 100 ,'%')
+print(classification_report(y_test, xgboost_model.predict(X_test)))
 
 
-
-
-
-
-# 6. Results interpretation (Wartości shapley'a, feature importance, partial dependence plot itp.)
 # 6.3. Explain the model's predictions using SHAP
 explainer = shap.Explainer(xgboost_model, X_train)
 shap_values = explainer(X_test)
-
-# 6.4. SHAP Summary Plot (global feature importance)
-plt.figure()  # Create a new figure
-shap.summary_plot(shap_values, X_test, feature_names=feature_names)
-plt.show()  # Display the plot
-
-# 6.5. SHAP Dependence Plot (feature vs. SHAP value)
-shap.dependence_plot('MedInc', shap_values.values, X_test, feature_names=feature_names)
-plt.show()  # Display the plot
-
-# 6.6. SHAP Force Plot (local explanation of a single prediction)
-# Create a new figure
-shap.force_plot(explainer.expected_value, shap_values[0].values, X_test[0], feature_names=feature_names, matplotlib=True)
-plt.show()  # Display the plot
-
-# 6.7. SHAP Waterfall Plot (breakdown of individual prediction)
-plt.figure()  # Create a new figure
-shap.plots.waterfall(shap_values[0])
-plt.show()  # Display the plot
+shap_values.feature_names = feature_names
+shap_values.target_names = target_names
+print('SHAP values shape:', shap_values.shape)
+#shap_values is an instance of Explanation object (https://shap.readthedocs.io/en/latest/generated/shap.Explanation.html#)
+#It's an array of nested arrays. in our case it's:
+#[91 - for each row a shap value is calculated]
+#[*][6] - we have 6 features, so 6 columns
+#[*][*][3] - we have 3 unique values of risk low, mid, high
 
 
+#SHAP Summary Plot (global feature importance)
+plt.figure()
+shap.summary_plot(shap_values, X_test, feature_names=feature_names, class_names=list(RiskLevelConversionMap.keys()))
+plt.show()
+
+
+# SHAP Summary Plot for High Risk feature importance
+plt.figure()
+shap.plots.bar(shap_values[:, :, 2])
+plt.show()
+
+# SHAP High Risk Beeswarm diagram for each feature
+plt.figure()
+shap.plots.beeswarm(shap_values[:, :, 2])
+plt.show()
 
