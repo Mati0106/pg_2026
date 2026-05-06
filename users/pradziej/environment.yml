@@ -8,12 +8,13 @@ dependencies:
   - scikit-learn
   - numpy
   - matplotlib
-  - optuna
-  - optuna-integration
-  - optuna-dashboard
   - chainer
-  - nbformat>=4.2.0
+  - nbformat
   - xgboost
   - shap
-  - ydata-profiling
+  - optuna
+  - optuna-integration
+  # - ydata-profiling
+  # - dask
+
   
