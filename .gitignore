@@ -3,3 +3,4 @@ ml_project/*
 /users/pszarlowski/__pycache__
 .venv/*
 venv/*
+venv_312/*
