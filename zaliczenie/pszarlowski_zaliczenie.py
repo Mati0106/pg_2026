@@ -13,7 +13,7 @@ import warnings
 import pandas as pd
 from sklearn.linear_model import LinearRegression, Ridge, Lasso
 from sklearn.model_selection import cross_val_score, train_test_split
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 warnings.filterwarnings("ignore")
@@ -61,9 +61,20 @@ def split_data_without_random_state(data):
     return X_train, X_test, y_train, y_test
 
 def reshape_data(data):
-    df_reshape_data = data.replace({'yes': 1.0, 'no': 0.0}, inplace=True)
-    df_reshape_data = df_reshape_data.replace({'furnished': 2.0, 'semi-furnished': 1.0, 'unfurnished': 0.0},
-                                              inplace=True)
+    # df_reshape_data = data.replace({'yes': 1.0, 'no': 0.0}, inplace=True)
+    # df_reshape_data = df_reshape_data.replace({'furnished': 2.0, 'semi-furnished': 1.0, 'unfurnished': 0.0},
+    #                                           inplace=True)
+
+    encoder = LabelEncoder()
+
+    data['mainroad'] = encoder.fit_transform(data['mainroad'])
+    data['guestroom'] = encoder.fit_transform(data['guestroom'])
+    data['basement'] = encoder.fit_transform(data['basement'])
+    data['hotwaterheating'] = encoder.fit_transform(data['hotwaterheating'])
+    data['airconditioning'] = encoder.fit_transform(data['airconditioning'])
+    data['prefarea'] = encoder.fit_transform(data['prefarea'])
+    data['furnishingstatus'] = encoder.fit_transform(data['furnishingstatus'])
+    df_reshape_data = data
 
     y = df_reshape_data.iloc[:, 0]  # .to_numpy().astype('float64')
     # X = df_reshape_data[['area','bedrooms',	'bathrooms', 'stories', 'mainroad',	'guestroom','basement', 'airconditioning','parking','prefarea','furnishingstatus']].values
@@ -273,6 +284,12 @@ def evaluate_best_model(study: optuna.Study, X_train, X_test, y_train, y_test):
 
     print("="*58)
 
+    # best_model_without_random_state(best_model)
+
+    return best_model
+
+
+def best_model_without_random_state(best_model):
     # check best_model without random_state-and-cross_val_score
     X_train_wrs, X_test_wrs, y_train_wrs, y_test_wrs = split_data_without_random_state(load_data())
 
@@ -292,9 +309,6 @@ def evaluate_best_model(study: optuna.Study, X_train, X_test, y_train, y_test):
     print(f"    MAE  : {mae_wrs:.4f}")
     print("=" * 58)
     print("\n\n")
-
-    return best_model
-
 
 # ─────────────────────────────────────────────
 # Top trials leaderboard
