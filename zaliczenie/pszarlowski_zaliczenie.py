@@ -61,23 +61,23 @@ def split_data_without_random_state(data):
     return X_train, X_test, y_train, y_test
 
 def reshape_data(data):
-    # df_reshape_data = data.replace({'yes': 1.0, 'no': 0.0}, inplace=True)
-    # df_reshape_data = df_reshape_data.replace({'furnished': 2.0, 'semi-furnished': 1.0, 'unfurnished': 0.0},
-    #                                           inplace=True)
+    df_reshape_data = data.replace({'yes': 1.0, 'no': 0.0}, inplace=True)
+    df_reshape_data = df_reshape_data.replace({'furnished': 2.0, 'semi-furnished': 1.0, 'unfurnished': 0.0},
+                                              inplace=True)
 
-    encoder = LabelEncoder()
+    # encoder = LabelEncoder()
+    #
+    # data['mainroad'] = encoder.fit_transform(data['mainroad'])
+    # data['guestroom'] = encoder.fit_transform(data['guestroom'])
+    # data['basement'] = encoder.fit_transform(data['basement'])
+    # data['hotwaterheating'] = encoder.fit_transform(data['hotwaterheating'])
+    # data['airconditioning'] = encoder.fit_transform(data['airconditioning'])
+    # data['prefarea'] = encoder.fit_transform(data['prefarea'])
+    # data['furnishingstatus'] = encoder.fit_transform(data['furnishingstatus'])
+    # df_reshape_data = data
 
-    data['mainroad'] = encoder.fit_transform(data['mainroad'])
-    data['guestroom'] = encoder.fit_transform(data['guestroom'])
-    data['basement'] = encoder.fit_transform(data['basement'])
-    data['hotwaterheating'] = encoder.fit_transform(data['hotwaterheating'])
-    data['airconditioning'] = encoder.fit_transform(data['airconditioning'])
-    data['prefarea'] = encoder.fit_transform(data['prefarea'])
-    data['furnishingstatus'] = encoder.fit_transform(data['furnishingstatus'])
-    df_reshape_data = data
-
-    y = df_reshape_data.iloc[:, 0]  # .to_numpy().astype('float64')
-    # X = df_reshape_data[['area','bedrooms',	'bathrooms', 'stories', 'mainroad',	'guestroom','basement', 'airconditioning','parking','prefarea','furnishingstatus']].values
+    y = df_reshape_data.iloc[:, 0]  # .to_numpy().astype('float64') ,'furnishingstatus'
+    # X = df_reshape_data[['area','bedrooms','bathrooms', 'stories', 'mainroad','guestroom','basement','hotwaterheating','airconditioning','parking','prefarea']].values
     X = df_reshape_data.iloc[:, 1:]  # .to_numpy().astype('float64')
     return X,y, df_reshape_data
 
@@ -96,7 +96,7 @@ def check_correlation(data):
     fig, ax = plt.subplots(figsize=(10, 8))
 
     # Put heatmap with params
-    sns.heatmap(corr_matrix, annot=True, ax=ax, alpha=1.0, zorder=2)
+    sns.heatmap(corr_matrix, annot=True, ax=ax)#, alpha=1.0, zorder=2)
 
     # Format
     ax.tick_params(labelsize=9)
@@ -280,9 +280,6 @@ def evaluate_best_model(study: optuna.Study, X_train, X_test, y_train, y_test):
     print(f"    RMSE : {rmse:.4f}")
     print(f"    MAE  : {mae:.4f}")
     print("=" * 58)
-    print("\n\n")
-
-    print("="*58)
 
     # best_model_without_random_state(best_model)
 
@@ -301,7 +298,8 @@ def best_model_without_random_state(best_model):
     r2_wrs = r2_score(y_test_wrs, y_pred_wrs)
     cvs = cross_val_score(best_model, X_test_wrs, y_test_wrs, cv=5)
     # print("  LinearRegression -> cvs.r^2: %.4f" % cvs.mean())
-
+    print("\n")
+    print("="*58)
     print("\n  Test model with best Metrics without random_state:")
     # print(f"    R²   : {r2_wrs:.4f}")
     print(f"    cross_val_score R²  : {cvs.mean():.4f}")
@@ -340,6 +338,7 @@ def print_model_breakdown(study: optuna.Study):
             t for t in study.trials
             if t.params.get("model") == mdl and t.value is not None
         ]
+
         if trials:
             best = max(trials, key=lambda t: t.value)
             print(f"  {mdl:<15} → best R²: {best.value:.4f}  (trial #{best.number})")
