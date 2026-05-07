@@ -398,10 +398,11 @@ def main():
     # 2. Feature engineering + Engineering analysis
     # 2.1 #Checking missing values
     # 2.2 #Skalowanie (Scaling): StandardScaler
-    # 2.3 #heatmap is Feature Selection (FS is a part of Exploratory Data Analysis (EDA))
+
     # df_reshape_data contains replaced strings in a columns like **yes, no, furnished, semi-furnished, unfurnished** into float values
     X_train, X_test, y_train, y_test, df_reshape_data = check_n_prepare_data(data)
 
+    # 2.3 #heatmap is Feature Selection (FS is a part of Exploratory Data Analysis (EDA))
     check_correlation(df_reshape_data)
 
     # 3. Modeling
