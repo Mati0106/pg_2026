@@ -14,7 +14,6 @@ Opis kroków zadania:
    - Wykonujemy wykres pudełkowy (boxplot), aby zweryfikować i przeanalizować wartości odstające. 
    - Wizualizacja danych odstających (boxplot). Wykres pudełkowy dla wzrostu
    - Wizualizacja danych odstających (boxplot). Wykres pudełkowy dla wag
-   - Feature Engineering (FE): Przekształcenie danych kategorycznych (płeć) na numeryczne (0/1).
    - Podział danych: Zbiór podzielono na część treningową (80%) i testową (20%) przy użyciu train_test_split.
      zbiór treningowy to dane na których się model uczy a testowy to zbiór którego nie zna i na którym sprawdzę skuteczność uczenia.
 
