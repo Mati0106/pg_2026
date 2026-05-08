@@ -1,0 +1,137 @@
+[
+  {
+    "timestamp": "2026-05-07 21:46",
+    "gatunki": [
+      "Drama"
+    ],
+    "lata": "2000-2020",
+    "dlugosc": "90-180 min",
+    "min_glosow": 50000,
+    "min_metacritic": 0,
+    "topowi_rezyserzy": false,
+    "liczba_wynikow": 10,
+    "top_3": [
+      "Hamilton",
+      "The Dark Knight",
+      "The Lord of the Rings: The Two Towers"
+    ]
+  },
+  {
+    "timestamp": "2026-04-23 10:13",
+    "gatunki": [
+      "Action"
+    ],
+    "lata": "1980-2020",
+    "dlugosc": "90-120 min",
+    "min_glosow": 150000,
+    "min_metacritic": 0,
+    "topowi_rezyserzy": true,
+    "liczba_wynikow": 9,
+    "top_3": [
+      "Raiders of the Lost Ark",
+      "Blade Runner",
+      "Lethal Weapon"
+    ]
+  },
+  {
+    "timestamp": "2026-04-23 10:13",
+    "gatunki": [
+      "Action"
+    ],
+    "lata": "2000-2020",
+    "dlugosc": "90-120 min",
+    "min_glosow": 150000,
+    "min_metacritic": 0,
+    "topowi_rezyserzy": true,
+    "liczba_wynikow": 2,
+    "top_3": [
+      "The Adventures of Tintin",
+      "Planet of the Apes"
+    ]
+  },
+  {
+    "timestamp": "2026-04-23 10:12",
+    "gatunki": [
+      "Action"
+    ],
+    "lata": "2000-2020",
+    "dlugosc": "90-120 min",
+    "min_glosow": 140000,
+    "min_metacritic": 0,
+    "topowi_rezyserzy": true,
+    "liczba_wynikow": 3,
+    "top_3": [
+      "The Adventures of Tintin",
+      "Planet of the Apes",
+      "Beowulf"
+    ]
+  },
+  {
+    "timestamp": "2026-04-23 10:12",
+    "gatunki": [
+      "Drama"
+    ],
+    "lata": "2000-2020",
+    "dlugosc": "90-180 min",
+    "min_glosow": 180000,
+    "min_metacritic": 0,
+    "topowi_rezyserzy": false,
+    "liczba_wynikow": 10,
+    "top_3": [
+      "The Dark Knight",
+      "The Lord of the Rings: The Fellowship of the Ring",
+      "The Lord of the Rings: The Two Towers"
+    ]
+  },
+  {
+    "timestamp": "2026-04-23 10:12",
+    "gatunki": [
+      "Drama"
+    ],
+    "lata": "2000-2020",
+    "dlugosc": "90-180 min",
+    "min_glosow": 50000,
+    "min_metacritic": 0,
+    "topowi_rezyserzy": false,
+    "liczba_wynikow": 10,
+    "top_3": [
+      "Hamilton",
+      "The Dark Knight",
+      "The Lord of the Rings: The Two Towers"
+    ]
+  },
+  {
+    "timestamp": "2026-04-22 22:24",
+    "gatunki": [
+      "Drama"
+    ],
+    "lata": "2000-2020",
+    "dlugosc": "90-180 min",
+    "min_glosow": 50000,
+    "min_metacritic": 0,
+    "topowi_rezyserzy": false,
+    "liczba_wynikow": 10,
+    "top_3": [
+      "Hamilton",
+      "The Dark Knight",
+      "The Lord of the Rings: The Two Towers"
+    ]
+  },
+  {
+    "timestamp": "2026-04-22 21:16",
+    "gatunki": [
+      "Drama"
+    ],
+    "lata": "2000-2020",
+    "dlugosc": "90-180 min",
+    "min_glosow": 50000,
+    "min_metacritic": 0,
+    "topowi_rezyserzy": false,
+    "liczba_wynikow": 10,
+    "top_3": [
+      "Hamilton",
+      "The Dark Knight",
+      "The Lord of the Rings: The Two Towers"
+    ]
+  }
+]
