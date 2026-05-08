@@ -1,0 +1,10 @@
+# Python 3.10+
+pandas
+numpy
+scikit-learn
+xgboost
+matplotlib
+seaborn
+shap
+optuna
+kagglehub
