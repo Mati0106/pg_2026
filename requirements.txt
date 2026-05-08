@@ -1,0 +1,9 @@
+kaggle
+matplotlib
+numpy
+optuna
+pandas
+seaborn
+shap
+xgboost
+scikit-learn

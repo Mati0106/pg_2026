@@ -1,0 +1,13 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Data files (Downloaded via kaggle API)
+*.csv
+*.zip
+
+# Environments and IDE
+.venv/
+venv/
+.vscode/
