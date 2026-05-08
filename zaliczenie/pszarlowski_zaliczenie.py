@@ -3,14 +3,13 @@ Hyperparameter Optimization for Regression with Optuna
 SHAP values
 Modeling
 =======================================================
-Optimizes LinearRegression, Ridge, Lasso,
-
 """
 
 import optuna
 import numpy as np
 import warnings
 import pandas as pd
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression, Ridge, Lasso
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
@@ -52,7 +51,7 @@ def check_n_prepare_data(data):
     print(f"  Train samples : {X_train.shape[0]}")
     print(f"  Test  samples : {X_test.shape[0]}")
     print(f"  Features      : {X_train.shape[1]}")
-    print(f"  Target range  : [{y.min():.2f}, {y.max():.2f}]")
+    print(f"  Target range  : [{y.min():.2f}, {y.max():.2f}] [min-max] ")
 
     return X_train, X_test, y_train, y_test, df_reshape_data
 
@@ -136,7 +135,15 @@ def objective(trial: optuna.Trial, X_train, y_train) -> float:
         solver = trial.suggest_categorical(
             "ridge_solver", ["auto", "svd", "cholesky", "lsqr", "sag", "saga"]
         )
-        model = Ridge(alpha=alpha, fit_intercept=fit_intercept, solver=solver)
+        # max_iter = trial.suggest_int("ridge_max_iter", 500, 5000, step=500)
+        # tol = trial.suggest_float("ridge_tol", 1e-6, 1e-1, log=True)
+        model = Ridge(
+            alpha=alpha,
+            fit_intercept=fit_intercept,
+            solver=solver,
+            # max_iter=max_iter,
+            # tol=tol
+        )
 
     else: #model_name == "Lasso":
         alpha = trial.suggest_float("lasso_alpha", 1e-4, 1e2, log=True)
@@ -200,6 +207,26 @@ def train_models_default_hiper_params(X_train, X_test, y_train, y_test):
     # print("  Lasso -> cvs.r^2: %.4f" % cvs.mean())
 
     print()
+
+    params = {
+        'max_depth': 5,
+        'random_state': 0,
+        'n_estimators': 100,
+        'min_samples_split': 10,
+        'min_samples_leaf': 20
+    }
+    rf_model = RandomForestRegressor()
+    rf_model.fit(X_train, y_train)
+
+    pred = rf_model.predict(X_test)
+    rmse = mean_squared_error(y_test, pred)
+    mae = mean_absolute_error(y_test, pred)
+    r2 = r2_score(y_test, pred)
+    # print(f"  RandomForest RMSE: {rmse}")
+    print(f"  RandomForest -> r^2 %.4f: " % r2)
+    print(f"  RandomForest -> MAE: ", mae)
+
+    print("\n\n")
 
 
 # ─────────────────────────────────────────────
