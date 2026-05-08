@@ -19,7 +19,9 @@ import matplotlib.pyplot as plt
 
 warnings.filterwarnings("ignore")
 
-
+# FEATURES =      ['area','bedrooms','bathrooms', 'stories', 'parking'] #'mainroad','guestroom','basement','hotwaterheating','airconditioning','prefarea'
+FEATURES =      ['area', 'bedrooms', 'bathrooms', 'stories', 'mainroad', 'guestroom', 'basement', 'hotwaterheating','airconditioning', 'parking', 'prefarea', 'furnishingstatus']
+# feature_names = ['area', 'bedrooms', 'bathrooms', 'stories', 'mainroad', 'guestroom', 'basement', 'hotwaterheating','airconditioning', 'parking', 'prefarea', 'furnishingstatus']
 # ─────────────────────────────────────────────
 # Load data
 # ─────────────────────────────────────────────
@@ -80,7 +82,7 @@ def reshape_data(data):
     print(df_reshape_data.info())
 
     y = df_reshape_data.iloc[:, 0]#.to_numpy().astype('float64')# ,'furnishingstatus'
-    # X = df_reshape_data[['area','bedrooms','bathrooms', 'stories', 'mainroad','guestroom','basement','hotwaterheating','airconditioning','parking','prefarea']].values
+    # X = df_reshape_data[FEATURES].values
     X = df_reshape_data.iloc[:, 1:]#.to_numpy().astype('float64')
 
     return X,y, df_reshape_data
@@ -130,6 +132,7 @@ def objective(trial: optuna.Trial, X_train, y_train) -> float:
         model = LinearRegression(fit_intercept=fit_intercept, positive=positive)
 
     elif model_name == "Ridge":
+        # alpha = trial.suggest_float("ridge_alpha", 0, 100,step=0.01, log=False)
         alpha = trial.suggest_float("ridge_alpha", 1e-4, 1e4, log=True)
         fit_intercept = trial.suggest_categorical("ridge_fit_intercept", [True, False])
         solver = trial.suggest_categorical(
@@ -387,29 +390,32 @@ def shap_explainer(model,X_train, X_test, y_train, y_test):
     import shap
     import matplotlib.pyplot as plt
 
-    feature_names = ['area', 'bedrooms', 'bathrooms', 'stories', 'mainroad', 'guestroom', 'basement', 'hotwaterheating',
-                     'airconditioning', 'parking', 'prefarea', 'furnishingstatus']
+    # feature_names = ['area', 'bedrooms', 'bathrooms', 'stories', 'mainroad', 'guestroom', 'basement', 'hotwaterheating',
+    #                  'airconditioning', 'parking', 'prefarea', 'furnishingstatus']
 
     explainer = shap.LinearExplainer(model, X_train)
     shap_values = explainer(X_test)
 
     # 4. SHAP Summary Plot (global feature importance)
     plt.figure()  # Create a new figure
-    shap.summary_plot(shap_values, X_test, feature_names=feature_names)
+    shap.summary_plot(shap_values, X_test, feature_names=FEATURES)
     plt.show()  # Display the plot
     #
     # 5. SHAP Dependence Plot (feature vs. SHAP value)
-    shap.dependence_plot('area', shap_values.values, X_test, feature_names=feature_names)
-    plt.show()  # Display the plot
-    #
+    # shap.dependence_plot('area', shap_values.values, X_test, feature_names=FEATURES)
+    # plt.show()  # Display the plot
+
     # 6. SHAP Force Plot (local explanation of a single prediction)
     # Create a new figure
-    shap.force_plot(explainer.expected_value, shap_values[0].values, X_test[0], feature_names=feature_names,
-                    matplotlib=True)
-    plt.show()  # Display the plot
-    #
+    # shap.force_plot(explainer.expected_value, shap_values[0].values, X_test[0], feature_names=FEATURES,
+    #                 matplotlib=True)
+    # plt.show()  # Display the plot
+
     # # 7. SHAP Waterfall Plot (breakdown of individual prediction)
     plt.figure()  # Create a new figure
+
+    shap_values.feature_names = FEATURES
+
     shap.plots.waterfall(shap_values[0])
     plt.show()  # Display the plot
 
