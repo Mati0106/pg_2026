@@ -10,7 +10,7 @@ import numpy as np
 import warnings
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model import LinearRegression, Ridge, Lasso
+from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
@@ -76,7 +76,7 @@ def reshape_data(data):
     data['hotwaterheating'] = encoder.fit_transform(data['hotwaterheating'])
     data['airconditioning'] = encoder.fit_transform(data['airconditioning'])
     data['prefarea'] = encoder.fit_transform(data['prefarea'])
-    data['furnishingstatus'] = encoder.fit_transform(data['furnishingstatus'])
+    data['furnishingstatus'] = encoder.fit_transform(data['furnishingstatus']) #* (-1)
     df_reshape_data = data
 
     print(df_reshape_data.info())
@@ -101,7 +101,7 @@ def check_correlation(data):
     fig, ax = plt.subplots(figsize=(10, 8))
 
     # Put heatmap with params
-    sns.heatmap(corr_matrix, annot=True, ax=ax, alpha=1.0, zorder=2)
+    sns.heatmap(corr_matrix, annot=True, ax=ax)#, alpha=1.0, zorder=2)
 
     # Format
     ax.tick_params(labelsize=9)
@@ -121,7 +121,7 @@ def objective(trial: optuna.Trial, X_train, y_train) -> float:
     """
 
     model_name = trial.suggest_categorical(
-        "model", ["LinearRegression", "Ridge", "Lasso"]
+        "model", ["LinearRegression", "Ridge", "Lasso","ElasticNet"]
     )
 
     if model_name == "LinearRegression":
@@ -146,6 +146,20 @@ def objective(trial: optuna.Trial, X_train, y_train) -> float:
             solver=solver,
             # max_iter=max_iter,
             # tol=tol
+        )
+
+    elif model_name == "ElasticNet":
+        alpha = trial.suggest_float("en_alpha", 1e-4, 1e2, log=True)
+        l1_ratio = trial.suggest_float("en_l1_ratio", 0.0, 1.0)
+        fit_intercept = trial.suggest_categorical("en_fit_intercept", [True, False])
+        max_iter = trial.suggest_int("en_max_iter", 500, 5000, step=500)
+        selection = trial.suggest_categorical("en_selection", ["cyclic", "random"])
+        model = ElasticNet(
+            alpha=alpha,
+            l1_ratio=l1_ratio,
+            fit_intercept=fit_intercept,
+            max_iter=max_iter,
+            selection=selection,
         )
 
     else: #model_name == "Lasso":
@@ -281,6 +295,7 @@ def evaluate_best_model(study: optuna.Study, X_train, X_test, y_train, y_test):
         "LinearRegression": "lr_",
         "Ridge": "ridge_",
         "Lasso": "lasso_",
+        "ElasticNet":   "en_",
     }
     prefix = prefix_strip[model_name]
     clean = {
@@ -294,6 +309,7 @@ def evaluate_best_model(study: optuna.Study, X_train, X_test, y_train, y_test):
         "LinearRegression": LinearRegression,
         "Ridge": Ridge,
         "Lasso": Lasso,
+        "ElasticNet": ElasticNet,
 
     }[model_name]
 
@@ -369,7 +385,7 @@ def print_top_trials(study: optuna.Study, top_n: int = 5):
 def print_model_breakdown(study: optuna.Study):
     print("\n  Best R² per model type:")
     print("  " + "-" * 40)
-    models = ["LinearRegression", "Ridge", "Lasso"]
+    models = ["LinearRegression", "Ridge", "Lasso","ElasticNet"]
     for mdl in models:
         trials = [
             t for t in study.trials
@@ -411,14 +427,13 @@ def shap_explainer(model,X_train, X_test, y_train, y_test):
     #                 matplotlib=True)
     # plt.show()  # Display the plot
 
-    # # 7. SHAP Waterfall Plot (breakdown of individual prediction)
+    # 7. SHAP Waterfall Plot (breakdown of individual prediction)
     plt.figure()  # Create a new figure
 
     shap_values.feature_names = FEATURES
 
     shap.plots.waterfall(shap_values[0])
     plt.show()  # Display the plot
-
 
 def actual_pred_values_plot(y_test, y_pred):
     plt.figure(figsize=(6, 6))
@@ -468,7 +483,7 @@ def main():
     shap_explainer(best_model, X_train, X_test, y_train, y_test)
 
     # print_top_trials(study, top_n=5)
-    # print_model_breakdown(study)
+    print_model_breakdown(study)
 
     return study, best_model
 
