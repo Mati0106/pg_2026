@@ -31,7 +31,6 @@ Ocenia czystość miodu na podstawie jego właściwości.
 
 ### Projekt obejmuje 
   * **XGBoost Regressor** do predykcji ciągłej wartości Purity
-  * **XGBoost Classifier** do klasyfikacji Purity na klasy 0/1/2
   * **SHAP** do interpretacji modelu
   * **Optuna** do optymalizacji hiperparametrów
   * **LogisticRegression** do porówniania z XGBoost
@@ -43,23 +42,6 @@ Ocenia czystość miodu na podstawie jego właściwości.
 2. Final Model MSE: 0.00047379835210978067 (Optuna)
 
 * Model regresyjny osiąga bardzo wysoką dokładność  (MSE ≈ 0.00048)
-
-
-### XGBoost Classifier
-
-Accuracy: 98.15%
-
-              precision    recall  f1-score   support
-
-           0       0.98      0.99      0.99     27779
-           1       0.99      0.97      0.98     23288
-           2       0.98      0.99      0.98     30741
-
-    accuracy                           0.98     81808
-    macro avg       0.98      0.98      0.98     81808
-    weighted avg       0.98      0.98      0.98     81808
-
-
 
 ### LogisticRegression
 
