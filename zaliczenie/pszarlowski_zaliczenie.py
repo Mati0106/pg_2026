@@ -15,6 +15,8 @@ from sklearn.linear_model import LinearRegression, Ridge, Lasso
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 warnings.filterwarnings("ignore")
 
@@ -61,24 +63,27 @@ def split_data_without_random_state(data):
     return X_train, X_test, y_train, y_test
 
 def reshape_data(data):
-    df_reshape_data = data.replace({'yes': 1.0, 'no': 0.0}, inplace=True)
-    df_reshape_data = df_reshape_data.replace({'furnished': 2.0, 'semi-furnished': 1.0, 'unfurnished': 0.0},
-                                              inplace=True)
+    # df_reshape_data = data.replace({'yes': 1.0, 'no': 0.0}, inplace=True)
+    # df_reshape_data = df_reshape_data.replace({'furnished': 2.0, 'semi-furnished': 1.0, 'unfurnished': 0.0},
+    #                                           inplace=True)
 
-    # encoder = LabelEncoder()
-    #
-    # data['mainroad'] = encoder.fit_transform(data['mainroad'])
-    # data['guestroom'] = encoder.fit_transform(data['guestroom'])
-    # data['basement'] = encoder.fit_transform(data['basement'])
-    # data['hotwaterheating'] = encoder.fit_transform(data['hotwaterheating'])
-    # data['airconditioning'] = encoder.fit_transform(data['airconditioning'])
-    # data['prefarea'] = encoder.fit_transform(data['prefarea'])
-    # data['furnishingstatus'] = encoder.fit_transform(data['furnishingstatus'])
-    # df_reshape_data = data
+    encoder = LabelEncoder()
 
-    y = df_reshape_data.iloc[:, 0]  # .to_numpy().astype('float64') ,'furnishingstatus'
+    data['mainroad'] = encoder.fit_transform(data['mainroad'])
+    data['guestroom'] = encoder.fit_transform(data['guestroom'])
+    data['basement'] = encoder.fit_transform(data['basement'])
+    data['hotwaterheating'] = encoder.fit_transform(data['hotwaterheating'])
+    data['airconditioning'] = encoder.fit_transform(data['airconditioning'])
+    data['prefarea'] = encoder.fit_transform(data['prefarea'])
+    data['furnishingstatus'] = encoder.fit_transform(data['furnishingstatus'])
+    df_reshape_data = data
+
+    print(df_reshape_data.info())
+
+    y = df_reshape_data.iloc[:, 0]#.to_numpy().astype('float64')# ,'furnishingstatus'
     # X = df_reshape_data[['area','bedrooms','bathrooms', 'stories', 'mainroad','guestroom','basement','hotwaterheating','airconditioning','parking','prefarea']].values
-    X = df_reshape_data.iloc[:, 1:]  # .to_numpy().astype('float64')
+    X = df_reshape_data.iloc[:, 1:]#.to_numpy().astype('float64')
+
     return X,y, df_reshape_data
 
 
@@ -86,8 +91,7 @@ def reshape_data(data):
 # Check correlation with all features
 # ─────────────────────────────────────────────
 def check_correlation(data):
-    import seaborn as sns
-    import matplotlib.pyplot as plt
+
 
     # compute correlation
     corr_matrix = data.corr(method='pearson')
@@ -96,7 +100,7 @@ def check_correlation(data):
     fig, ax = plt.subplots(figsize=(10, 8))
 
     # Put heatmap with params
-    sns.heatmap(corr_matrix, annot=True, ax=ax)#, alpha=1.0, zorder=2)
+    sns.heatmap(corr_matrix, annot=True, ax=ax, alpha=1.0, zorder=2)
 
     # Format
     ax.tick_params(labelsize=9)
@@ -275,13 +279,16 @@ def evaluate_best_model(study: optuna.Study, X_train, X_test, y_train, y_test):
     mae = mean_absolute_error(y_test, y_pred)
     r2 = r2_score(y_test, y_pred)
 
-    print("\n  Test Set Metrics:")
+    print("\n  best hiper-params results:")
     print(f"    R²   : {r2:.4f}")
     print(f"    RMSE : {rmse:.4f}")
     print(f"    MAE  : {mae:.4f}")
     print("=" * 58)
 
     # best_model_without_random_state(best_model)
+
+    #show scatter plot with predict and test data
+    actual_pred_values_plot(y_test, y_pred)
 
     return best_model
 
@@ -356,7 +363,7 @@ def shap_explainer(model,X_train, X_test, y_train, y_test):
     feature_names = ['area', 'bedrooms', 'bathrooms', 'stories', 'mainroad', 'guestroom', 'basement', 'hotwaterheating',
                      'airconditioning', 'parking', 'prefarea', 'furnishingstatus']
 
-    explainer = shap.Explainer(model, X_train)
+    explainer = shap.LinearExplainer(model, X_train)
     shap_values = explainer(X_test)
 
     # 4. SHAP Summary Plot (global feature importance)
@@ -379,6 +386,19 @@ def shap_explainer(model,X_train, X_test, y_train, y_test):
     shap.plots.waterfall(shap_values[0])
     plt.show()  # Display the plot
 
+
+def actual_pred_values_plot(y_test, y_pred):
+    plt.figure(figsize=(6, 6))
+    plt.scatter(y_test, y_pred, alpha=0.5)
+    plt.plot([y_test.min(), y_test.max()],
+             [y_test.min(), y_test.max()],
+             linestyle='--')
+
+    plt.xlabel("Actual Values")
+    plt.ylabel("Predicted Values")
+    plt.title("Actual vs Predicted")
+    plt.savefig("actual_vs_predicted.png", dpi=300, bbox_inches="tight")
+    plt.show()
 
 # ─────────────────────────────────────────────
 # Main
@@ -407,8 +427,8 @@ def main():
     # 3. Modeling
     train_models_default_hiper_params(X_train, X_test, y_train, y_test)
 
-    # 4. Hiperparametry optymalizacyjne
-    study = run_study(X_train, y_train, n_trials=120)
+    # 4. Hiperparametry optymalizacyja
+    study = run_study(X_train, y_train, n_trials=100)
     best_model = evaluate_best_model(study, X_train, X_test, y_train, y_test)
 
     # 5. Interpretacja wyników
