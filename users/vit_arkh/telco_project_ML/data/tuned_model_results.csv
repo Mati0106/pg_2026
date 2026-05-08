@@ -1,0 +1,5 @@
+Tuned Model,Accuracy,Recall,Precision,F1-Score,Best Params
+XGBoost,0.6061,0.9626,0.3996,0.5647,"{'learning_rate': 0.01381370078046492, 'max_depth': 4, 'scale_pos_weight': 5}"
+Decision Tree,0.6529,0.8797,0.4256,0.5737,"{'max_depth': 3, 'min_samples_split': 46}"
+Random Forest,0.7026,0.8422,0.4667,0.6006,"{'n_estimators': 64, 'max_depth': 3}"
+Logistic Regression,0.7388,0.7834,0.5052,0.6143,"{'C': 2.742596041791559, 'l1_ratio': 0.0}"

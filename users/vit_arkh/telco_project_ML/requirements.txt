@@ -1,0 +1,15 @@
+# Telco Customer Churn - ML Project Dependencies
+# Create conda env: conda create -n telco_ml python=3.11 && conda activate telco_ml
+# Install: pip install -r requirements.txt
+
+pandas>=2.0.0
+numpy>=1.24.0
+scikit-learn>=1.3.0
+xgboost>=1.7.0
+kaggle>=1.5.0
+python-dotenv>=1.0.0
+ydata-profiling>=4.0.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+optuna>=3.0.0
+shap>=0.44.0
