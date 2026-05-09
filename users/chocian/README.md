@@ -6,7 +6,7 @@
 
 ## Podejscie
 
-Model trenowany jest na danych globalnych (wszystkie kraje, tylko BEV), dzieki czemu uczy sie ogolnych wzorcow adopcji — jak rok, tempo wzrostu i specyfika kraju wplywaja na wskaznik adopcji BEV. Dane globalne zapewniaja wystarczajaca liczbe obserwacji do wiarygodnego treningu modelu (XGBoost + Lasso).
+Model trenowany jest na danych globalnych (wszystkie kraje, tylko BEV), dzieki czemu uczy sie ogolnych wzorcow adopcji — jak rok, tempo wzrostu i specyfika kraju wplywaja na wskaznik adopcji BEV. Dane globalne zapewniaja wystarczajaca liczbe obserwacji do wiarygodnego treningu modelu (XGBoost).
 
 Po wytrenowaniu model jest uzywany do prognozy dla Polski — kraju o niskiej adopcji BEV. Profil Polski (zakodowany kraj, historyczne tempo wzrostu) jest przekazywany do modelu, ktory na tej podstawie przewiduje trajektorie adopcji do 2030 roku. Takie podejscie pozwala odpowiedziec na pytanie: jesli Polska bedzie rozwijac sie zgodnie ze swiatowymi wzorcami, gdzie znajdzie sie w 2030?
 
@@ -15,7 +15,7 @@ Po wytrenowaniu model jest uzywany do prognozy dla Polski — kraju o niskiej ad
 1. Wczytanie danych
 2. Analiza danych (EDA)
 3. Preprocessing i feature engineering
-4. Model (XGBoost + Lasso)
+4. Model (XGBoost)
 5. Optymalizacja hiperparametrow (Optuna + GridSearchCV)
 6. Interpretacja wynikow (Feature Importance, SHAP, PDP)
 7. Prognoza dla Polski do 2030
