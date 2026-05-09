@@ -1,0 +1,35 @@
+# Environment
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data (keep structure, ignore raw files)
+src/scripts/data/*.csv
+src/scripts/data/*.xlsx
+src/scripts/data/*.parquet
+
+# Models
+*.pkl
+*.joblib
+*.h5
+
+# OS
+.DS_Store
+Thumbs.db
