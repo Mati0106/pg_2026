@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression, Lasso, Ridge
 from sklearn.ensemble import RandomForestRegressor
 from xgboost import XGBRegressor
-from lightgbm import LGBMRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import os
 
@@ -25,6 +24,7 @@ def plot_prediction_scatter(ax, y_test, pred, name, color):
     ax.set_xlabel("Wartosc rzeczywista (mln$)")
     ax.set_ylabel("Predykcja (mln$)")
     ax.set_title(name)
+    ax.tick_params(axis="x", rotation=45)
 
 
 def run_modelling(X_train, X_test, y_train, y_test):
@@ -56,20 +56,13 @@ def run_modelling(X_train, X_test, y_train, y_test):
     ridge.fit(X_train, y_train)
     result_ridge = evaluate_model("Ridge", ridge, X_test, y_test)
 
-    # 6) LightGBM
-    lgbm = LGBMRegressor(n_estimators=100, max_depth=5, learning_rate=0.1,
-                         random_state=42, verbosity=-1)
-    lgbm.fit(X_train, y_train)
-    result_lgbm = evaluate_model("LightGBM", lgbm, X_test, y_test)
-
-    results = [result_lr, result_lasso, result_rf, result_xgb, result_ridge, result_lgbm]
+    results = [result_lr, result_lasso, result_rf, result_xgb, result_ridge]
     predictions = {
         "Lin. Regression": result_lr["pred"],
         "Lasso":           result_lasso["pred"],
         "Random Forest":   result_rf["pred"],
         "XGBoost":         result_xgb["pred"],
         "Ridge":           result_ridge["pred"],
-        "LightGBM":        result_lgbm["pred"],
     }
 
     df_results = pd.DataFrame(results)
@@ -78,7 +71,7 @@ def run_modelling(X_train, X_test, y_train, y_test):
 
     # wykres porownawczy
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
-    colors = ["blue", "orange", "red", "green", "purple", "brown"]
+    colors = ["blue", "orange", "red", "green", "purple"]
 
     axes[0].bar(df_results["model"], df_results["R2"], color=colors)
     axes[0].set_title("R2 Score")
@@ -97,15 +90,14 @@ def run_modelling(X_train, X_test, y_train, y_test):
     plt.savefig("wyniki/porownanie_modeli.png", dpi=150)
     plt.close()
 
-    # predykcje vs rzeczywistosc (2x3)
-    fig, axes = plt.subplots(2, 3, figsize=(21, 10))
+    # predykcje vs rzeczywistosc (1x5)
+    fig, axes = plt.subplots(1, 5, figsize=(17, 5))
     plot_items = [
         ("Lin. Regression", result_lr["pred"],    "blue"),
         ("Lasso",           result_lasso["pred"],  "orange"),
         ("Random Forest",   result_rf["pred"],     "red"),
         ("XGBoost",         result_xgb["pred"],    "green"),
         ("Ridge",           result_ridge["pred"],  "purple"),
-        ("LightGBM",        result_lgbm["pred"],   "brown"),
     ]
     for ax, (name, pred, color) in zip(axes.flat, plot_items):
         plot_prediction_scatter(ax, y_test, pred, name, color)
@@ -125,6 +117,5 @@ def run_modelling(X_train, X_test, y_train, y_test):
         "Random Forest":   rf,
         "XGBoost":         xgb,
         "Ridge":           ridge,
-        "LightGBM":        lgbm,
     }
     return results, models, predictions

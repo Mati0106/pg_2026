@@ -6,7 +6,6 @@ from sklearn.linear_model import Lasso, Ridge
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import cross_val_score, GridSearchCV
 from xgboost import XGBRegressor
-from lightgbm import LGBMRegressor
 import os
 
 from src.modelling.models import evaluate_model
@@ -96,23 +95,6 @@ def run_optimization(X_train, X_test, y_train, y_test, results_before, n_trials=
     print(f"Najlepsze parametry Ridge: {study_ridge.best_params}")
     print(f"R2 (CV): {study_ridge.best_value:.4f}")
 
-    # LightGBM
-    def objective_lgbm(trial):
-        params = {
-            "n_estimators":  trial.suggest_int("n_estimators", 50, 300),
-            "max_depth":     trial.suggest_int("max_depth", 3, 9),
-            "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.3, log=True),
-            "num_leaves":    trial.suggest_int("num_leaves", 20, 100),
-        }
-        model = LGBMRegressor(random_state=42, verbosity=-1, **params)
-        return cross_val_score(model, X_train, y_train, cv=5, scoring="r2").mean()
-
-    print(f"\nOptymalizacja LightGBM ({n_trials} trials)...")
-    study_lgbm = optuna.create_study(direction="maximize")
-    study_lgbm.optimize(objective_lgbm, n_trials=n_trials)
-    print(f"Najlepsze parametry LightGBM: {study_lgbm.best_params}")
-    print(f"R2 (CV): {study_lgbm.best_value:.4f}")
-
     best_rf = RandomForestRegressor(random_state=42, n_jobs=-1, **study_rf.best_params)
     best_rf.fit(X_train, y_train)
 
@@ -125,9 +107,6 @@ def run_optimization(X_train, X_test, y_train, y_test, results_before, n_trials=
     best_ridge = Ridge(**study_ridge.best_params)
     best_ridge.fit(X_train, y_train)
 
-    best_lgbm = LGBMRegressor(random_state=42, verbosity=-1, **study_lgbm.best_params)
-    best_lgbm.fit(X_train, y_train)
-
     print("\nPo optymalizacji:")
     results_after = []
     result_rf_opt = evaluate_model("Random Forest (opt)", best_rf, X_test, y_test)
@@ -138,15 +117,13 @@ def run_optimization(X_train, X_test, y_train, y_test, results_before, n_trials=
     results_after.append(result_lasso_opt)
     result_ridge_opt = evaluate_model("Ridge (opt)", best_ridge, X_test, y_test)
     results_after.append(result_ridge_opt)
-    result_lgbm_opt = evaluate_model("LightGBM (opt)", best_lgbm, X_test, y_test)
-    results_after.append(result_lgbm_opt)
 
     # wykres przed vs po
-    opt_model_names = ["Random Forest", "XGBoost", "Lasso", "Ridge", "LightGBM"]
+    opt_model_names = ["Random Forest", "XGBoost", "Lasso", "Ridge"]
     r2_before = [r["R2"] for r in results_before if r["model"] in opt_model_names]
     r2_after = [r["R2"] for r in results_after]
 
-    x = np.arange(5)
+    x = np.arange(4)
     w = 0.3
     fig, ax = plt.subplots(figsize=(14, 6))
     ax.bar(x - w/2, r2_before, w, label="Przed", color="#4C72B0")
@@ -167,23 +144,21 @@ def run_optimization(X_train, X_test, y_train, y_test, results_before, n_trials=
     plt.close()
 
     # historia optymalizacji
-    fig, axes = plt.subplots(1, 5, figsize=(30, 5))
+    fig, axes = plt.subplots(1, 4, figsize=(24, 5))
     _plot_history(study_rf,    axes[0], "RF - historia optymalizacji")
     _plot_history(study_xgb,   axes[1], "XGB - historia optymalizacji")
     _plot_history(study_lasso, axes[2], "Lasso - historia optymalizacji")
     _plot_history(study_ridge, axes[3], "Ridge - historia optymalizacji")
-    _plot_history(study_lgbm,  axes[4], "LightGBM - historia optymalizacji")
     plt.tight_layout()
     plt.savefig("wyniki/optuna_historia.png", dpi=150)
     plt.close()
 
     # waznosc parametrow
-    fig, axes = plt.subplots(1, 5, figsize=(30, 5))
+    fig, axes = plt.subplots(1, 4, figsize=(24, 5))
     _plot_importances(study_rf,    axes[0], "RF - waznosc parametrow")
     _plot_importances(study_xgb,   axes[1], "XGB - waznosc parametrow")
     _plot_importances(study_lasso, axes[2], "Lasso - waznosc parametrow")
     _plot_importances(study_ridge, axes[3], "Ridge - waznosc parametrow")
-    _plot_importances(study_lgbm,  axes[4], "LightGBM - waznosc parametrow")
     plt.tight_layout()
     plt.savefig("wyniki/optuna_parametry.png", dpi=150)
     plt.close()
@@ -194,7 +169,6 @@ def run_optimization(X_train, X_test, y_train, y_test, results_before, n_trials=
         "XGBoost (opt)":       (best_xgb,   "XGBoost (optym)"),
         "Lasso (opt)":         (best_lasso, "Lasso (optym)"),
         "Ridge (opt)":         (best_ridge, "Ridge (optym)"),
-        "LightGBM (opt)":      (best_lgbm,  "LightGBM (optym)"),
     }
     best_model, best_name = best_name_map[best_result["model"]]
 
@@ -203,11 +177,10 @@ def run_optimization(X_train, X_test, y_train, y_test, results_before, n_trials=
         "XGBoost": best_xgb,
         "Lasso": best_lasso,
         "Ridge": best_ridge,
-        "LightGBM": best_lgbm,
     }
 
     print(f"\nNajlepszy model: {best_name}")
-    return best_model, best_name, results_after, study_rf, study_xgb, study_lasso, study_ridge, study_lgbm, models_opt
+    return best_model, best_name, results_after, study_rf, study_xgb, study_lasso, study_ridge, models_opt
 
 
 def run_gridsearch(X_train, X_test, y_train, y_test, results_optuna):
@@ -238,14 +211,6 @@ def run_gridsearch(X_train, X_test, y_train, y_test, results_optuna):
             Ridge(),
             {"alpha": [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]},
         ),
-        "LightGBM": (
-            LGBMRegressor(random_state=42, verbosity=-1),
-            {
-                "n_estimators": [50, 100, 200],
-                "max_depth": [3, 5, 7],
-                "learning_rate": [0.05, 0.1, 0.2],
-            },
-        ),
     }
 
     results_gs = []
@@ -259,11 +224,11 @@ def run_gridsearch(X_train, X_test, y_train, y_test, results_optuna):
         n_fits = len(gs.cv_results_["mean_test_score"]) * 5
         print(f"  {name}: {n_fits} fits, best params: {gs.best_params_}")
 
-    model_names = ["Random Forest", "XGBoost", "Lasso", "Ridge", "LightGBM"]
+    model_names = ["Random Forest", "XGBoost", "Lasso", "Ridge"]
     r2_gs  = [r["R2"] for r in results_gs]
     r2_opt = [r["R2"] for r in results_optuna]
 
-    x = np.arange(5)
+    x = np.arange(4)
     w = 0.3
     fig, ax = plt.subplots(figsize=(14, 6))
     ax.bar(x - w/2, r2_opt, w, label="Optuna",      color="#4C72B0")
