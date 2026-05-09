@@ -198,8 +198,16 @@ def run_optimization(X_train, X_test, y_train, y_test, results_before, n_trials=
     }
     best_model, best_name = best_name_map[best_result["model"]]
 
+    models_opt = {
+        "Random Forest": best_rf,
+        "XGBoost": best_xgb,
+        "Lasso": best_lasso,
+        "Ridge": best_ridge,
+        "LightGBM": best_lgbm,
+    }
+
     print(f"\nNajlepszy model: {best_name}")
-    return best_model, best_name, results_after, study_rf, study_xgb, study_lasso, study_ridge, study_lgbm
+    return best_model, best_name, results_after, study_rf, study_xgb, study_lasso, study_ridge, study_lgbm, models_opt
 
 
 def run_gridsearch(X_train, X_test, y_train, y_test, results_optuna):
