@@ -1,6 +1,6 @@
-# Prereqisites
+# Prerequisites
 
-  ## Install depenencies and enable the virtual env.
+  ## Install dependencies and enable the virtual environment
 
   ```bash
     conda env create --file=users/pradziej/environments.yml
@@ -136,14 +136,14 @@ Two models were used with comparable accuracy SVC, XGBCLassifier
 ![image](./img/compare.png)
 
 ```
-  XGB Accuracy: 64.83 %
+  XGB accuracy: 64.83 %
   SVC accuracy: 68.13 %
 ```
 
 ## Optimalization
 
 ## Results interpretation and 
-SHAP Values were used to validate model performance and accuracy
+SHAP values were used to validate model performance and feature importance.
 
 ![image](./img/shap_summary.png)
  * BloodSugar has the highest impact on the reasoning second is the Systolic Blood Pressure in all three categories.
