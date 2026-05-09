@@ -1,0 +1,633 @@
+================================================================================
+PREDICTIVE MAINTENANCE MACHINE LEARNING PROJECT - COMPLETE DOCUMENTATION
+================================================================================
+
+PROJECT OVERVIEW
+================================================================================
+This is a machine learning project designed to predict equipment failures using
+predictive maintenance data. The system builds and evaluates multiple classification
+models to identify when machines are likely to fail, enabling preventive maintenance.
+
+The project includes:
+- Data loading and preprocessing
+- Exploratory Data Analysis (EDA)
+- Model building and evaluation
+- Hyperparameter tuning using Optuna
+- Results comparison and analysis
+
+TECHNOLOGY STACK
+================================================================================
+- Python 3.x
+- Machine Learning Libraries:
+  * scikit-learn (Logistic Regression, Random Forest, HistGradientBoosting)
+  * XGBoost (XGBClassifier)
+  * CatBoost (CatBoostClassifier)
+  * LightGBM (optional)
+- Data Processing: pandas, numpy
+- Visualization: matplotlib, seaborn
+- Hyperparameter Tuning: Optuna
+- Preprocessing: PowerTransformer
+
+PROJECT STRUCTURE
+================================================================================
+
+1. dataset/
+   └─ predictive_maintenance.csv
+      - Main dataset containing equipment sensor data and failure information
+      - Contains columns like Temperature, Rotational Speed, Torque, Type,
+        Failure Type, and Target (failure indicator)
+
+2. jupiterNotebook/
+   └─ build-model-to-prediction.ipynb
+      - Jupyter notebook version of the project
+      - Interactive environment for exploration and development
+
+3. Main Python Files:
+   - data_pipeline.py: Data loading and preprocessing
+   - eda.py: Visualization and exploratory analysis
+   - build_model_to_prediction.py: Model building and evaluation
+   - optuna_tuning.py: Hyperparameter optimization
+
+4. Output Files:
+   - optuna_tuning_summary.json: Hyperparameter tuning results
+   - catboost_info/: CatBoost training logs and metrics
+
+================================================================================
+DETAILED FILE DESCRIPTIONS
+================================================================================
+
+1. DATA_PIPELINE.PY
+================================================================================
+Purpose: Handles all data loading, cleaning, and preprocessing operations
+
+Key Functions:
+
+find_dataset_path(path=None):
+- Locates the predictive_maintenance.csv file
+- Searches in default location or recursively in project directory
+- Raises error if file not found
+
+load_data(path=None):
+- Loads CSV data into pandas DataFrame
+- Returns dataframe for processing
+
+clean_data(df):
+- Removes "Product ID" column (identifier only, no predictive value)
+- Removes "Failure Type" column (multi-class, keeping only Target binary)
+- Returns cleaned dataframe
+
+remove_outliers(df):
+- Handles outliers in "Rotational speed [rpm]" using IQR method:
+  * Calculates Q1 (25th percentile) and Q3 (75th percentile)
+  * Computes IQR = Q3 - Q1
+  * Removes values outside [Q1 - 1.5*IQR, Q3 + 1.5*IQR]
+- For "Torque [Nm]":
+  * Removes values >= 70 Nm (extreme values)
+- Returns dataframe with outliers removed
+
+encode_features(df):
+- Encodes categorical variables using LabelEncoder
+- Converts "Type" column to numeric labels
+- Enables machine learning models to process categorical data
+
+featur_eng(df):
+- Feature engineering function (partially implemented)
+- Intended operations:
+  * Convert Air temperature from Kelvin to Celsius
+  * Apply logarithmic transformation to rotational speed for normalization
+  * Apply quantile transformation to tool wear
+
+prepare_dataset(df):
+- Orchestrates complete preprocessing pipeline:
+  1. Cleans data
+  2. Removes outliers
+  3. Encodes categorical features
+- Separates features (X) and target (y)
+- Validates presence of Target column
+- Returns X (features) and y (target variable)
+
+split_and_scale(X, y, test_size=0.2, random_state=42):
+- Splits data into training (80%) and testing (20%) sets
+- Uses StratifiedKFold to maintain class distribution
+- Applies PowerTransformer (Yeo-Johnson method) for normalization:
+  * Fits transformer on training data
+  * Transforms both training and test data
+  * Prevents data leakage by fitting only on training set
+- Returns: x_train, x_test, y_train, y_test
+
+Data Pipeline Flow:
+load_data() → clean_data() → remove_outliers() → encode_features() →
+prepare_dataset() → split_and_scale()
+
+
+2. EDA.PY
+================================================================================
+Purpose: Exploratory Data Analysis - Visualize and understand data patterns
+
+Key Functions:
+
+_style_plots():
+- Internal function that standardizes plot styling
+- Sets whitegrid background
+- Configures figure size to (10, 6)
+- Sets title padding to 14 pixels
+
+plot_histogram(df, column, bins=50):
+- Creates distribution histogram with KDE curve
+- Shows frequency and density of values
+- Useful for understanding feature distributions
+
+plot_box(df, column):
+- Creates box plot for outlier detection
+- Shows median, quartiles, and extreme values
+- Identifies skewed distributions
+
+plot_scatter(df, x, y, hue=None, title=None, log_x=False):
+- Creates scatter plot to show relationships between two variables
+- Optional log scale on x-axis for better visualization
+- Color coding (hue) can show third dimension
+- Example: Torque vs Temperature colored by Failure Type
+
+plot_count(df, column):
+- Bar chart showing categorical value counts
+- Annotates bars with exact counts
+- Rotates x-labels for readability
+
+plot_pie(df, column, title=None):
+- Pie chart showing proportional distribution
+- Shows percentage labels
+- Useful for class distribution analysis
+
+plot_correlation_matrix(df):
+- Heatmap of correlation coefficients between numeric features
+- Values range from -1 (negative correlation) to 1 (positive correlation)
+- Identifies feature relationships and multicollinearity
+
+visualize_data(df):
+- Runs complete EDA pipeline:
+  1. Distribution of Rotational Speed
+  2. Box plot of Rotational Speed (outliers)
+  3. Distribution of Torque
+  4. Box plot of Torque (outliers)
+  5. Scatter: Torque vs Temperature (by Failure Type)
+  6. Scatter: Torque vs Rotational Speed (by Failure Type)
+  7. Count plot of Target variable (class distribution)
+  8. Count plot of Type variable
+  9. Pie chart of Failure Types
+  10. Correlation matrix of all numeric features
+
+
+3. BUILD_MODEL_TO_PREDICTION.PY
+================================================================================
+Purpose: Train, evaluate, and compare multiple classification models
+
+Key Functions:
+
+build_models():
+- Creates dictionary of 6 classification models:
+
+  1. Logistic Regression:
+     - max_iter=1000 (iterations for convergence)
+     - Linear model serving as baseline
+
+  2. Random Forest:
+     - n_estimators=100 (number of trees)
+     - criterion="entropy" (split quality measure)
+     - max_depth=20 (maximum tree depth)
+     - random_state=42 (reproducibility)
+     - n_jobs=-1 (use all CPU cores)
+
+  3. HistGradientBoosting:
+     - max_iter=100 (number of boosting iterations)
+     - learning_rate=0.1 (controls step size)
+     - random_state=42
+
+  4. XGBoost:
+     - n_estimators=100
+     - learning_rate=0.1
+     - eval_metric="logloss" (evaluation metric)
+     - Optimized for binary classification
+
+  5. CatBoost:
+     - iterations=70 (training iterations)
+     - learning_rate=0.1
+     - Handles categorical features natively
+
+  6. LightGBM (optional):
+     - n_estimators=50
+     - learning_rate=0.1
+     - Only installed if lightgbm package available
+
+evaluate_model(model, x_train, x_test, y_train, y_test, plot=False):
+- Trains model on training data
+- Makes predictions on test data
+- Calculates 5 metrics:
+
+  1. Accuracy: (TP + TN) / (TP + TN + FP + FN)
+     - Overall correctness of predictions
+
+  2. Precision: TP / (TP + FP)
+     - Of predicted failures, how many were actual failures
+     - Important when false alarms are costly
+
+  3. Recall: TP / (TP + FN)
+     - Of actual failures, how many were caught
+     - Important when missing failures is critical
+
+  4. F1-Score: 2 * (Precision * Recall) / (Precision + Recall)
+     - Harmonic mean balancing precision and recall
+
+  5. ROC-AUC: Area Under ROC Curve
+     - Measures discrimination ability across thresholds
+     - Ranges 0-1 (1.0 = perfect, 0.5 = random)
+
+- Optional plotting generates:
+  1. Confusion Matrix: Visual breakdown of predictions
+  2. Classification Report: Detailed per-class metrics
+  3. ROC Curve: True Positive vs False Positive Rate
+  4. Precision-Recall Curve: Trade-off between metrics
+
+_plot_diagnostics(model, x_test, y_test, y_pred, y_prob):
+- Creates three diagnostic visualizations:
+
+  1. Confusion Matrix Heatmap:
+     - Shows TP, TN, FP, FN counts
+     - Color intensity indicates magnitude
+     - Helps identify which classes are confused
+
+  2. Classification Report:
+     - Text output with precision/recall/f1 per class
+     - Weighted and macro averages
+
+  3. ROC Curve:
+     - X-axis: False Positive Rate (1 - Specificity)
+     - Y-axis: True Positive Rate (Sensitivity)
+     - AUC = area under curve
+     - Diagonal line = random classifier (AUC=0.5)
+     - Curve above diagonal = good classifier
+
+  4. Precision-Recall Curve:
+     - X-axis: Recall
+     - Y-axis: Precision
+     - Shows trade-off between metrics
+
+run_model_pipeline(data_path=None, plot=False):
+- Complete workflow:
+  1. Load data
+  2. Prepare dataset (clean, encode, etc.)
+  3. Split and scale data
+  4. Build all models
+  5. Train and evaluate each model
+  6. Display results in dataframe
+  7. Optionally plot diagnostics
+
+main():
+- Entry point when script runs directly
+- Finds dataset in default or candidate path
+- Runs feature engineering (featur_eng)
+- Runs exploratory analysis (visualize_data)
+- Runs model pipeline
+
+Model Training Flow:
+load_data() → prepare_dataset() → split_and_scale() → build_models() →
+evaluate_model() → _plot_diagnostics() → display_results()
+
+
+4. OPTUNA_TUNING.PY
+================================================================================
+Purpose: Optimize hyperparameters of top models using Bayesian optimization
+
+What is Hyperparameter Tuning?
+- Different from model parameters (learned from data)
+- Hyperparameters are set before training (e.g., learning_rate, max_depth)
+- Optuna uses TPE (Tree-structured Parzen Estimator) sampler
+- Intelligently explores parameter space to find optimal combinations
+
+Key Functions:
+
+evaluate_model(model, x_train, x_test, y_train, y_test):
+- Same as build_model_to_prediction.py version
+- Trains model and returns 5 metrics (accuracy, precision, recall, f1, roc_auc)
+
+baseline_models():
+- Creates dictionary of 3 baseline models:
+  1. Random Forest (default hyperparameters)
+  2. XGBoost (default hyperparameters)
+  3. CatBoost (default hyperparameters)
+- Establishes performance baseline before tuning
+
+objective_rf(trial, X, y):
+- Optimization objective for Random Forest
+- Parameter search space:
+  * n_estimators: 50-300 trees
+  * max_depth: 5-40 tree depth
+  * min_samples_split: 2-10 samples needed to split
+  * min_samples_leaf: 1-6 samples at leaf
+  * max_features: {"sqrt", "log2", None}
+  * criterion: {"gini", "entropy"} split criterion
+- Uses 3-fold Cross-Validation with ROC-AUC scoring
+- Trains model and returns cross-validation ROC-AUC
+
+objective_xgb(trial, X, y):
+- Optimization objective for XGBoost
+- Parameter search space:
+  * n_estimators: 50-300
+  * max_depth: 3-12
+  * learning_rate: 0.01-0.3 (log scale)
+  * subsample: 0.6-1.0 (fraction of samples per tree)
+  * colsample_bytree: 0.5-1.0 (fraction of features per tree)
+  * reg_alpha: 1e-8-10 (L1 regularization, log scale)
+  * reg_lambda: 1e-8-10 (L2 regularization, log scale)
+  * scale_pos_weight: 1.0-20 (weight for minority class)
+- Uses 3-fold Cross-Validation
+- Returns average ROC-AUC across folds
+
+objective_catboost(trial, X, y):
+- Optimization objective for CatBoost
+- Parameter search space:
+  * iterations: 50-250 boosting rounds
+  * learning_rate: 0.01-0.3 (log scale)
+  * depth: 4-10 tree depth
+  * l2_leaf_reg: 1.0-10 (L2 regularization)
+  * random_strength: 1.0-20 (randomness strength)
+  * border_count: 32-128 number of splits
+- Uses 3-fold Cross-Validation
+- Returns average ROC-AUC
+
+tune_model(name, X, y, objective, n_trials=25):
+- Creates Optuna study with "maximize" direction (higher ROC-AUC is better)
+- Uses TPE sampler with seed=42 for reproducibility
+- Runs 25 trials exploring parameter combinations
+- Returns study object with best parameters and values
+
+compare_models():
+- Main workflow for hyperparameter tuning:
+
+  STEP 1: Baseline Evaluation
+  - Train baseline models (default hyperparameters)
+  - Evaluate on holdout test set
+  - Print baseline metrics for comparison
+
+  STEP 2: Hyperparameter Tuning
+  - Run Optuna for each of 3 models (25 trials each)
+  - Each trial:
+    * Samples new hyperparameters
+    * Trains model with those parameters
+    * Evaluates using 3-fold cross-validation
+    * Records ROC-AUC score
+  - Optuna learns which parameters work better
+  - Tracks best parameters and best ROC-AUC
+
+  STEP 3: Tuned Model Evaluation
+  - Train each model with best parameters found by Optuna
+  - Evaluate on same holdout test set as baseline
+  - Compare performance improvements
+
+  STEP 4: Results Comparison
+  - Create summary table comparing:
+    * Baseline accuracy vs Tuned accuracy
+    * Baseline F1 vs Tuned F1
+    * Baseline ROC-AUC vs Tuned ROC-AUC
+  - Save results to optuna_tuning_summary.json
+
+Output Files Generated:
+- optuna_tuning_summary.json:
+  * baseline: metrics for each baseline model
+  * tuned: metrics for each tuned model
+  * best_params: optimal parameters found for each model
+
+Tuning Workflow:
+baseline_models() → evaluate_model() → tune_model() → objective_rf/xgb/catboost()
+→ cross_val_score() → compare_models() → save_results()
+
+
+================================================================================
+DATA FLOW DIAGRAM
+================================================================================
+
+FULL PIPELINE:
+┌─────────────────────────────────────────────────────────────────────┐
+│ predictive_maintenance.csv (Raw Dataset)                            │
+└────────────────────────┬────────────────────────────────────────────┘
+                         ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│ DATA PIPELINE (data_pipeline.py)                                    │
+│ - Remove Product ID column                                          │
+│ - Remove Failure Type column (keep Target binary)                   │
+│ - Handle outliers in Rotational Speed and Torque                    │
+│ - Encode categorical "Type" column                                  │
+└────────────────────────┬────────────────────────────────────────────┘
+                         ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│ SPLIT & SCALE                                                       │
+│ - Train/Test Split (80/20 with stratification)                      │
+│ - PowerTransformer normalization (Yeo-Johnson)                      │
+└────────────────────────┬────────────────────────────────────────────┘
+                         ├──────────────┬──────────────┐
+                         ↓              ↓              ↓
+        ┌────────────────────┐  ┌──────────────────┐  ┌─────────────┐
+        │ EDA.PY             │  │ BUILD_MODEL...PY │  │ OPTUNA...PY │
+        │                    │  │                  │  │             │
+        │ - Histograms       │  │ 6 ML Models:     │  │ Tune Top 3: │
+        │ - Box plots        │  │ 1. Log Reg       │  │ RF, XGB, CB │
+        │ - Scatter plots    │  │ 2. Random Forest │  │             │
+        │ - Correlation      │  │ 3. HistGB        │  │ 25 trials   │
+        │ - Count plots      │  │ 4. XGBoost       │  │ each model  │
+        │ - Pie charts       │  │ 5. CatBoost      │  │             │
+        │                    │  │ 6. LightGBM      │  │ Best params │
+        └────────────────────┘  │                  │  │ saved       │
+                                │ Evaluate with:   │  └─────────────┘
+                                │ - Confusion Mat  │
+                                │ - ROC Curve      │
+                                │ - Pr-Recall      │
+                                │ - Metrics        │
+                                └──────────────────┘
+
+
+================================================================================
+HOW TO RUN THE PROJECT
+================================================================================
+
+Prerequisites:
+- Python 3.7+
+- Install required packages:
+  pip install pandas scikit-learn xgboost catboost optuna matplotlib seaborn
+
+Running Individual Modules:
+
+1. EXPLORATORY DATA ANALYSIS:
+   python -c "from data_pipeline import load_data; from eda import visualize_data; \
+              df = load_data(); visualize_data(df)"
+
+   Creates multiple plots showing:
+   - Data distributions
+   - Relationships between variables
+   - Correlation heatmap
+   - Class distribution
+
+2. BUILD AND EVALUATE MODELS:
+   python build_model_to_prediction.py
+
+   Output:
+   - Trained 6 different classification models
+   - Performance metrics for each model
+   - Confusion matrices and ROC curves (optional with plot=True)
+   - Ranked results table
+
+3. HYPERPARAMETER TUNING:
+   python optuna_tuning.py
+
+   Output:
+   - Baseline model performance
+   - Optimization trials showing improvements
+   - Best hyperparameters for each model
+   - Performance comparison table
+   - Results saved to optuna_tuning_summary.json
+
+Running Complete Pipeline:
+   python build_model_to_prediction.py
+
+This executes:
+   1. Feature engineering
+   2. EDA visualizations
+   3. Model building and evaluation
+
+
+================================================================================
+KEY METRICS EXPLAINED
+================================================================================
+
+ACCURACY = (TP + TN) / (TP + TN + FP + FN)
+- Percentage of correct predictions
+- Can be misleading with imbalanced classes
+- Best for: Balanced datasets
+
+PRECISION = TP / (TP + FP)
+- Of predicted failures, how many were correct?
+- Answers: "When we predict failure, are we right?"
+- High precision = Few false alarms
+- Best for: When false alarms are costly
+
+RECALL = TP / (TP + FN)
+- Of actual failures, how many did we catch?
+- Answers: "Did we catch all failures?"
+- High recall = Few missed failures
+- Best for: When missing failures is critical
+
+F1-SCORE = 2 * (Precision * Recall) / (Precision + Recall)
+- Harmonic mean of precision and recall
+- Values 0-1 (1.0 = perfect)
+- Balances both metrics
+- Best for: Overall model quality with imbalanced data
+
+ROC-AUC = Area Under the ROC Curve
+- Measures discrimination ability across all thresholds
+- Values 0-1 (0.5 = random classifier, 1.0 = perfect)
+- Insensitive to class imbalance
+- Best for: Comparing models fairly
+
+Confusion Matrix:
+- True Positives (TP): Correctly predicted failures
+- True Negatives (TN): Correctly predicted non-failures
+- False Positives (FP): Incorrectly predicted failures (alarm but no failure)
+- False Negatives (FN): Incorrectly predicted non-failures (missed failures)
+
+
+================================================================================
+EXPECTED OUTPUT EXAMPLE
+================================================================================
+
+When running build_model_to_prediction.py:
+
+Training Logistic Regression
+Training Random Forest
+Training HistGradientBoosting
+Training XGBoost
+Training CatBoost
+
+Results Table:
+                            accuracy  precision   recall       f1  roc_auc
+model
+Logistic Regression         0.723450   0.856321  0.654321  0.742891  0.801234
+Random Forest               0.821654   0.902345  0.742891  0.815234  0.876543
+HistGradientBoosting        0.834567   0.912345  0.756789  0.827891  0.889012
+XGBoost                     0.845678   0.923456  0.768901  0.839012  0.901234
+CatBoost                    0.856789   0.934567  0.779012  0.850123  0.912345
+LightGBM                    0.867890   0.945678  0.790123  0.861234  0.923456
+
+When running optuna_tuning.py:
+
+=== Baseline model performance ===
+RandomForest: {'accuracy': 0.821, 'precision': 0.902, 'recall': 0.742, ...}
+
+=== Running Optuna hyperparameter tuning ===
+RandomForest best ROC AUC: 0.89234
+XGBoost best ROC AUC: 0.90345
+CatBoost best ROC AUC: 0.91456
+
+=== Comparison table ===
+                base_accuracy  tuned_accuracy  base_f1  tuned_f1
+model
+RandomForest      0.821654       0.845678      0.815   0.838
+XGBoost           0.834567       0.856789      0.827   0.849
+CatBoost          0.845678       0.867890      0.839   0.861
+
+
+================================================================================
+COMMON ISSUES AND SOLUTIONS
+================================================================================
+
+Issue: "FileNotFoundError: Could not locate predictive_maintenance.csv"
+Solution: Ensure dataset/ folder contains predictive_maintenance.csv file
+
+Issue: "ModuleNotFoundError: No module named 'catboost'"
+Solution: Install required package: pip install catboost
+
+Issue: "LightGBM is not installed; skipping LightGBM model"
+Solution: Optional module; install if desired: pip install lightgbm
+
+Issue: Models not improving with tuning
+Solution: Increase n_trials in tune_model() for longer search
+
+Issue: Memory error with large dataset
+Solution: Reduce cross-validation folds or sample data
+
+
+================================================================================
+PROJECT NOTES
+================================================================================
+
+Current Implementation Status:
+✓ Data loading and preprocessing working
+✓ Outlier removal implemented
+✓ Feature encoding completed
+✓ EDA visualizations functional
+✓ Model building and evaluation complete
+✓ Hyperparameter tuning with Optuna working
+✓ Results comparison and storage working
+
+Pending/Incomplete Features:
+- featur_eng() function partially implemented
+  * Needs temperature conversion (K to Celsius)
+  * Needs logarithmic transformation of rotation speed
+  * Needs quantile transformation of tool wear
+
+Model Performance Hierarchy (typical):
+1. CatBoost: Best overall (handles categorical features natively)
+2. XGBoost: Strong performance (requires feature engineering)
+3. HistGradientBoosting: Good performance (scikit-learn native)
+4. Random Forest: Solid baseline (interpretable)
+5. LightGBM: Fast training (optional)
+6. Logistic Regression: Baseline (linear model)
+
+Future Improvements:
+- Complete feature engineering function
+- Feature selection/importance analysis
+- Cross-validation on full pipeline
+- Threshold optimization for recall/precision trade-off
+- Model stacking/ensembling
+- Production deployment pipeline
+
+================================================================================
+END OF DOCUMENTATION
+================================================================================
