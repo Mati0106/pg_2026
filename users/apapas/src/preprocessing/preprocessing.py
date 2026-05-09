@@ -15,9 +15,10 @@ def run_preprocessing(df):
     df["Rank_Change"] = df["Previous Rank"] - df["Rank"]
     df["Log_Revenues"] = np.log1p(df["Revenues"])
     df["Log_Assets"] = np.log1p(df["Assets"])
+    df["Log_Profits"] = np.sign(df["Profits"]) * np.log1p(df["Profits"].abs())
 
     print("Nowe cechy: Profit_Margin, Revenue_Per_Employee, Asset_Turnover, "
-          "Rank_Change, Log_Revenues, Log_Assets")
+          "Rank_Change, Log_Revenues, Log_Assets, Log_Profits")
 
     # usuwanie brakow i inf
     df = df.replace([np.inf, -np.inf], np.nan)
@@ -25,9 +26,9 @@ def run_preprocessing(df):
     print(f"Po usunieciu brakow: {len(df)} wierszy")
 
     # przygotowanie X i y
-    features = ["Revenues", "Profits", "Assets", "Number of Employees",
-                "Revenue Change", "Profit_Margin", "Revenue_Per_Employee",
-                "Asset_Turnover", "Log_Revenues", "Log_Assets"]
+    features = ["Log_Assets", "Log_Revenues", "Profits", "Log_Profits",
+                "Number of Employees", "Revenue Change", "Profit_Margin",
+                "Revenue_Per_Employee", "Asset_Turnover"]
 
     df_model = df[features + ["Market Value"]].dropna()
     X = df_model[features]
