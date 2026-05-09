@@ -141,6 +141,41 @@ Two models were used with comparable accuracy SVC, XGBCLassifier
 ```
 
 ## Optimalization
+Optuna was used for evaluating params:
+ * n_estimators - Number of boosting rounds (trees) to build.
+ * learning_rate - Step size shrinkage used to prevent overfitting. A lower value makes the model more robust.
+ * max_depth - Maximum depth of a tree. Increasing this value makes the model more complex and likely to overfit.
+ * gamma - Minimum loss reduction required to make a further partition on a leaf node.
+
+It was run a couple of times with different results. The best run was able to get the model result around *69%*! 
+
+```[I 2026-05-09 07:54:40,504] Trial 0 finished with value: 0.6621441689623507 and parameters: {'n_estimators': 98, 'learning_rate': 0.1050746052936308, 'max_depth': 8, 'gamma': 3.688165882779818e-07}. Best is trial 0 with value: 0.6621441689623507.
+  [I 2026-05-09 07:54:41,836] Trial 1 finished with value: 0.667516069788797 and parameters: {'n_estimators': 5, 'learning_rate': 0.10400198222813266, 'max_depth': 9, 'gamma': 9.332762881128028e-07}. Best is trial 1 with value: 0.667516069788797.
+  [I 2026-05-09 07:54:42,874] Trial 2 finished with value: 0.6925390266299357 and parameters: {'n_estimators': 78, 'learning_rate': 0.10701753535785644, 'max_depth': 3, 'gamma': 0.06475881436946392}. Best is trial 2 with value: 0.6925390266299357.
+  [I 2026-05-09 07:54:44,006] Trial 3 finished with value: 0.6538797061524334 and parameters: {'n_estimators': 80, 'learning_rate': 0.16636429942302097, 'max_depth': 9, 'gamma': 1.795776471641738e-05}. Best is trial 2 with value: 0.6925390266299357.
+  [I 2026-05-09 07:54:44,105] Trial 4 finished with value: 0.6621671258034895 and parameters: {'n_estimators': 54, 'learning_rate': 0.139931622518025, 'max_depth': 12, 'gamma': 6.643100438301758e-05}. Best is trial 2 with value: 0.6925390266299357.
+  Best params:  {'n_estimators': 78, 'learning_rate': 0.10701753535785644, 'max_depth': 3, 'gamma': 0.06475881436946392}
+  Best value:  0.6925390266299357
+```
+
+The best params were found in third iteration (Trial 2)
+
+![image](./img/optuna_learning.png)
+
+Other interesting are: 
+```
+  [I 2026-05-09 06:56:01,093] Trial 0 finished with value: 0.6814967860422406 and parameters: {'n_estimators': 58, 'learning_rate': 0.04394766976678141, 'max_depth': 12, 'gamma': 0.0042985673100879715}. Best is trial 0 with value: 0.6814967860422406.
+  Best params:  {'n_estimators': 58, 'learning_rate': 0.04394766976678141, 'max_depth': 12, 'gamma': 0.0042985673100879715}
+  Best value:  0.6814967860422406
+```
+
+```
+  [I 2026-05-09 07:54:44,105] Trial 4 finished with value: 0.6621671258034895 and parameters: {'n_estimators': 54, 'learning_rate': 0.139931622518025, 'max_depth': 12, 'gamma': 6.643100438301758e-05}. Best is trial 2 with value: 0.6925390266299357.
+  Best params:  {'n_estimators': 78, 'learning_rate': 0.10701753535785644, 'max_depth': 3, 'gamma': 0.06475881436946392}
+  Best value:  0.6925390266299357
+```
+
+
 
 ## Results interpretation and 
 SHAP values were used to validate model performance and feature importance.

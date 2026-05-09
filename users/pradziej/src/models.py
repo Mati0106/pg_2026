@@ -67,7 +67,7 @@ def xgbclassifier_model(X_train, X_test, y_train, y_test, feature_names):
     # ]
 
     xgb_score = accuracy_score(y_test, y_pred)
-    log.info(f'Accuracy: ', xgb_score * 100, '%')
+    log.info(f'XGB accuracy:  {xgb_score * 100}%')
 
     print('Classification report\n\n', classification_report(y_test, y_pred))
     return xgboost_model, xgb_score

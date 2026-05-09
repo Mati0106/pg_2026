@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-
+from src.data_optimizer import OptunaOptimizer
 from src.data_converter import DataConverter
 from src.data_explainer import ShapDataExplainer
 from src.data_loader import DataLoader
@@ -64,10 +64,10 @@ def run():
     plt.show()
 
     # 5. Optimization (with Optuna)
-    # optuna_optimizer = OptunaOptimizer(X,y)
-    # optuna_optimizer.optimizeModel()
-    # optuna_optimizer.printOptunaReport()
-    # xgb_params = optuna_optimizer.getBestParams()
+    optuna_optimizer = OptunaOptimizer(X_train,y_train)
+    optuna_optimizer.optimizeModel()
+    optuna_optimizer.printOptunaReport()
+    xgb_params = optuna_optimizer.getBestParams()
 
     # 6.3. Explain the model's predictions using SHAP
     data_explainer = ShapDataExplainer(xgboost_model, X_train, X_test, feature_names, target_names,
