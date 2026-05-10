@@ -43,7 +43,7 @@ def check_n_prepare_data(data):
     print()
 
     X, y, df_reshape_data = reshape_data(data)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2,random_state=47) #,random_state=47
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2,random_state=18) #,random_state=47 test_size=0.16, random_state=18 N
 
     # Standardizing data
     scaler = StandardScaler()
@@ -195,7 +195,7 @@ def train_models_default_hiper_params(X_train, X_test, y_train, y_test):
     model_lr.fit(X_train, y_train)
     y_train_pred_lr = model_lr.predict(X_train)
     r2_lr = model_lr.score(X_test, y_test)
-    # print("odchylenie standardowe: %.4f" % wynik.std())
+
     print("  LinearRegression -> r^2: %.4f" % r2_lr)
     print("  LinearRegression -> MAE: ", mean_absolute_error(y_train, y_train_pred_lr))
     # cvs = cross_val_score(model_lr, X_test, y_test, cv=5)
@@ -244,6 +244,15 @@ def train_models_default_hiper_params(X_train, X_test, y_train, y_test):
     print(f"  RandomForest -> MAE: ", mae)
 
     print("\n\n")
+
+    import xgboost as xgb
+    xgb_model = xgb.XGBRegressor(n_estimators=1000)
+    xgb_model = xgb_model.fit(X_train, y_train)
+    r2 = xgb_model.score(X_test, y_test)
+    pred = xgb_model.predict(X_test)
+    mae = mean_absolute_error(y_test, pred)
+    print(f"  xgboost -> r^2 %.4f: " % r2)
+    print(f"  xgboost -> MAE: ", mae)
 
 
 # ─────────────────────────────────────────────
@@ -333,8 +342,10 @@ def evaluate_best_model(study: optuna.Study, X_train, X_test, y_train, y_test):
 
     # best_model_without_random_state(best_model)
 
+
+    #WYKRES 2
     #show scatter plot with predict and test data
-    actual_pred_values_plot(y_test, y_pred)
+    # actual_pred_values_plot(y_test, y_pred)
 
     return best_model
 
@@ -439,7 +450,7 @@ def actual_pred_values_plot(y_test, y_pred):
     plt.figure(figsize=(6, 6))
     plt.scatter(y_test, y_pred, alpha=0.5)
     plt.plot([y_test.min(), y_test.max()],
-             [y_test.min(), y_test.max()],
+             [y_pred.min(), y_pred.max()],
              linestyle='--')
 
     plt.xlabel("Actual Values")
@@ -455,7 +466,7 @@ def main():
     print("=" * 58)
     print("  Optuna Regression Hyperparameter Optimization")
     print("  Dataset: California Housing")
-    print("  Models : LinearRegression | Ridge | Lasso")
+    print("  Models : LinearRegression | Ridge | Lasso | ElasticNet")
     print("=" * 58)
     print()
 
@@ -463,6 +474,7 @@ def main():
     data = load_data()
 
     # 2. Feature engineering + Engineering analysis
+
     # 2.1 #Checking missing values
     # 2.2 #Skalowanie (Scaling): StandardScaler
 
@@ -472,7 +484,7 @@ def main():
     # 2.3 #heatmap is Feature Selection (FS is a part of Exploratory Data Analysis (EDA))
     check_correlation(df_reshape_data)
 
-    # 3. Modeling
+    # 3. Modeling witout hiperparams
     train_models_default_hiper_params(X_train, X_test, y_train, y_test)
 
     # 4. Hiperparametry optymalizacyja
